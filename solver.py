@@ -19,6 +19,20 @@ class RandomInterpretation():
         for i in xrange(self.num_vars):
             self.vars[i] *= multiplicator() # probabilitat 50-50 de ser positiva o negada
 
+    def satisfies(self, formula):
+        for clause in formula:
+            length = 3 #SEMPRE 3-SAT, MAGIC NUMBER ! (posar llargada clausula)
+
+            for lit in clause:
+                if lit == self.vars[abs(lit)-1]: # Satisfies clause:
+                    break
+                else:
+                    length -= 1
+            if length == 0: # Falsified clause
+                return False
+
+        return True
+
 
 def multiplicator():
 	if random.random() < 0.5:
@@ -37,6 +51,7 @@ class Solver():
     def solve(self, formula, num_vars, max_tries = 100, rnd_walk = 0.1, max_restarts = 10):
         random_interpretation = RandomInterpretation(num_vars)
         print "Interpretacio random: " + str(random_interpretation.vars)
+        print random_interpretation.satisfies(formula)
 
 # Funcions
 
