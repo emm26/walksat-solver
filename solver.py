@@ -1,4 +1,31 @@
 import sys
+import random
+
+# Clases
+
+class RandomInterpretation():
+    """An interpretation is an assignment of the possible values to variables"""
+
+    def __init__(self, num_vars):
+        self.num_vars = int(num_vars)
+        self.vars = None
+        self.get_random_interpretation() # al crear l'instancia ja es genera l'interpretacio
+
+
+    def get_random_interpretation(self):
+        """Get a random interpretation for all the variables"""
+        self.vars = range(1, self.num_vars+1)
+
+        for i in xrange(self.num_vars):
+            self.vars[i] *= multiplicator() # probabilitat 50-50 de ser positiva o negada
+
+
+def multiplicator():
+	if random.random() < 0.5:
+		return 1
+	else:
+		return -1
+
 
 # Funcions
 
@@ -27,5 +54,8 @@ if __name__ == '__main__' :
 
     cnf_file_name = sys.argv[1]
     formula, num_vars = get_cnf_formula(cnf_file_name)
-    print "Num_vars: " + num_vars
-    print formula
+    #print "Num_vars: " + num_vars
+    #print formula
+
+    random_interpretation = RandomInterpretation(num_vars)
+    print "Interpretacio random: " + str(random_interpretation.vars)
