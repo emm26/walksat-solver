@@ -26,6 +26,17 @@ def multiplicator():
 	else:
 		return -1
 
+class Solver():
+    """docstring for [object Object]."""
+    def __init__(self):
+        self.probability = 0
+        #self.problem = problem
+    	#self.best_sol = None
+    	#self.best_cost = problem
+
+    def solve(self, formula, num_vars, max_tries = 100, rnd_walk = 0.1, max_restarts = 10):
+        random_interpretation = RandomInterpretation(num_vars)
+        print "Interpretacio random: " + str(random_interpretation.vars)
 
 # Funcions
 
@@ -57,5 +68,7 @@ if __name__ == '__main__' :
     #print "Num_vars: " + num_vars
     #print formula
 
-    random_interpretation = RandomInterpretation(num_vars)
-    print "Interpretacio random: " + str(random_interpretation.vars)
+	# Create a solver instance with the problem to solve
+    solver = Solver()
+	# Solve the problem and get the best solution found
+    best_sol = solver.solve(formula, num_vars)
