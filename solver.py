@@ -20,24 +20,48 @@ class RandomInterpretation():
 
     def satisfies(self, formula):
         for clause in formula:
-            length = len(clause)
-
+            clause_length = len(clause)
             for lit in clause:
                 if lit == self.vars[abs(lit)-1]: # satisfies clause
                     break
                 else:
                     length -= 1
             if length == 0: # falsified clause
-                return False
+                return False, clause
 
-        return True
+        return True, []
+
+    def get_interpretation_with_changed_variable_sense(variable_to_change):
+        new_clause = list(self.vars)
+        new_clause[abs(variable_to_change)-1] *= -1
+        return new_clause
+
+    @staticmethod
+    def count_unsatisfiable_clauses(interpretation, formula):
+        unsatisfied_clauses = 0
+
+        for clause in formula:
+            clause_length = len(clause)
+            for lit in clause:
+                if lit == self.vars[abs(lit)-1]: # satisfies clause
+                    break
+                else:
+                    length -= 1
+            if length == 0: # falsified clause
+                unsatisfied_clauses++
+
+        return unsatisfied_clauses
 
 
 def multiplicator():
 	if random.random() < 0.5:
 		return 1
-	else:
-		return -1
+    return -1
+
+def flip_a_coin(probability):
+    if random.random() < probability:
+        return True
+    return False
 
 class Solver():
     """docstring for [object Object]."""
@@ -47,10 +71,33 @@ class Solver():
     	#self.best_sol = None
     	#self.best_cost = problem
 
-    def solve(self, formula, num_vars, max_tries = 100, rnd_walk = 0.1, max_restarts = 10):
+    def solve(self, formula, num_vars, max_flips = 100, rnd_walk = 0.1, max_restarts = 10):
+        """
         random_interpretation = RandomInterpretation(num_vars)
         print "Interpretacio random: " + str(random_interpretation.vars)
-        print random_interpretation.satisfies(formula)
+        print random_interpretation.satisfies(formula) 
+        """
+
+        for i in xrange(max_restarts):
+            random_interpretation = RandomInterpretation(num_vars)
+            for j in xrange(max_flips):
+                is_satifiable, unsatisfied_clause = random_interpretation.satisfies(formula)
+                if is_satifiable:
+                    return random_interpretation
+
+                best_interpretation = None
+                least_unsatisified_clauses = sys.maxint
+                for var in unsatisfied_clause:
+                    current_interpretation = random_interpretation.get_interpretation_with_changed_variable_sense(var)
+                    current_unsatisified_clauses = count_unsatisfiable_clauses(new_interpretation, formula)
+                    if (current_unsatisified_clauses < least_unsatisified_clauses):
+                        least_unsatisified_clauses = current_unsatisified_clauses
+                        best_interpretation = current_interpretation
+                if least_unsatisified_clauses > 0 and flip_a_coin(rnd_walk):
+                    random_variable = random.randint(0, len(unsatisfied_clause) - 1)
+                    random_interpretation = random_interpretation.get_interpretation_with_changed_variable_sense(unsatisfied_clause[random_variable])
+                
+
 
 # Functions
 
