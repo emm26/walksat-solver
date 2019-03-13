@@ -9,26 +9,25 @@ class RandomInterpretation():
     def __init__(self, num_vars):
         self.num_vars = int(num_vars)
         self.vars = None
-        self.get_random_interpretation() # al crear l'instancia ja es genera l'interpretacio
-
+        self.get_random_interpretation() # generate a random interp. when creating the instance 
 
     def get_random_interpretation(self):
         """Get a random interpretation for all the variables"""
         self.vars = range(1, self.num_vars+1)
 
         for i in xrange(self.num_vars):
-            self.vars[i] *= multiplicator() # probabilitat 50-50 de ser positiva o negada
+            self.vars[i] *= multiplicator() # 50/50 probability to be - or +
 
     def satisfies(self, formula):
         for clause in formula:
-            length = 3 #SEMPRE 3-SAT, MAGIC NUMBER ! (posar llargada clausula)
+            length = len(clause)
 
             for lit in clause:
-                if lit == self.vars[abs(lit)-1]: # Satisfies clause:
+                if lit == self.vars[abs(lit)-1]: # satisfies clause
                     break
                 else:
                     length -= 1
-            if length == 0: # Falsified clause
+            if length == 0: # falsified clause
                 return False
 
         return True
@@ -53,14 +52,14 @@ class Solver():
         print "Interpretacio random: " + str(random_interpretation.vars)
         print random_interpretation.satisfies(formula)
 
-# Funcions
+# Functions
 
 def get_cnf_formula(file_name):
     formula = []
 
     instance = open(file_name, "r")
     for l in instance:
-		if l[0] in ["c", "p"]: # Pass comments and program line
+		if l[0] in ["c", "p"]: # pass comments and program line
 			if l[0] == "p":
 				num_vars = l.split()[2]
 			continue
