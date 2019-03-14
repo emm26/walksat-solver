@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import sys
 import random
 
@@ -44,7 +46,7 @@ def count_unsatisfiable_clauses(interpretation, formula):
     return unsatisfied_clauses
 
 # Given an interpretation an a variable of the interpretation, returns a copy of
-# the interpretation with the value of the variable changed. 
+# the interpretation with the value of the variable changed.
 def get_interpretation_with_changed_variable_sense(interpretation, variable_to_change):
     new_clause = list(interpretation)
     new_clause[abs(variable_to_change)-1] *= -1
@@ -64,12 +66,7 @@ def flip_a_coin(probability):
 
 
 
-def solve(formula, num_vars, max_flips = 500, rnd_walk = 0.1, max_restarts = 50):
-    """
-    random_interpretation = RandomInterpretation(num_vars)
-    print "Interpretacio random: " + str(random_interpretation.vars)
-    print random_interpretation.satisfies(formula)
-    """
+def solve(formula, num_vars, max_flips = 1000, rnd_walk = 0.1, max_restarts = 100):
 
     for _ in xrange(max_restarts):
         random_interpretation = get_random_interpretation(num_vars)
@@ -96,7 +93,8 @@ def solve(formula, num_vars, max_flips = 500, rnd_walk = 0.1, max_restarts = 50)
             else:
                 random_interpretation = best_interpretation
 
-    return "No solution found"
+    print 's UNSATISFIABLE' # No solution found
+    return []
 
 
 # Functions
@@ -118,6 +116,9 @@ def get_cnf_formula(file_name):
 
     return formula, num_vars
 
+def print_solution(interpretation):
+    print 's SATISFIABLE'
+    print 'v ' + ' '.join(map(str, interpretation[:])) + ' 0'
 
 if __name__ == '__main__' :
     if len(sys.argv) < 2:
@@ -131,4 +132,5 @@ if __name__ == '__main__' :
 
 	# Solve the problem and get the best solution found
     best_sol = solve(formula, int(num_vars))
-    print best_sol
+    if best_sol:
+        print_solution(best_sol)
