@@ -120,6 +120,21 @@ def print_solution(interpretation):
     print 's SATISFIABLE'
     print 'v ' + ' '.join(map(str, interpretation[:])) + ' 0'
 
+# Returns a structure in which for every literal, points to the clauses that have that literal in them.
+def get_literal_locations_structure(formula, num_vars):
+    positive_literals_locations = [[] for _ in xrange(num_vars)]
+    negative_literals_locations = [[] for _ in xrange(num_vars)]
+
+    for cl_index, clause in enumerate(formula):
+        #print clause, cl_index
+        for literal in clause:
+            if literal > 0:
+                positive_literals_locations[literal-1].append(cl_index)
+            else:
+                negative_literals_locations[abs(literal)-1].append(cl_index)
+
+    return positive_literals_locations, negative_literals_locations
+
 if __name__ == '__main__' :
     if len(sys.argv) < 2:
         print "Usage: " + sys.argv[0] + " <cnf_file_name> "
@@ -127,6 +142,11 @@ if __name__ == '__main__' :
 
     cnf_file_name = sys.argv[1]
     formula, num_vars = get_cnf_formula(cnf_file_name)
+    positive_locs, negative_locs = get_literal_locations_structure(formula, int(num_vars))
+    print positive_locs
+    print ""
+    print negative_locs
+
     #print "Num_vars: " + num_vars
     #print formula
 
