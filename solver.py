@@ -52,7 +52,20 @@ def get_interpretation_with_changed_variable_sense(interpretation, variable_to_c
     new_clause[abs(variable_to_change)-1] *= -1
     return new_clause
 
+# Returns a list with the number of falsified literals in each clause
+def get_counters_of_falsified_literals(interpretation, formula):
+    counters = []
 
+    for clause in formula:
+        #clause_length = len(clause)
+        current_falsified_literals = 0
+        for lit in clause:
+            if lit != interpretation[abs(lit)-1]: # falsified literal
+                current_falsified_literals += 1
+
+        counters.append(current_falsified_literals)
+
+    return counters
 
 def multiplicator():
     if random.random() < 0.5:
@@ -65,27 +78,32 @@ def flip_a_coin(probability):
     return False
 
 
+def pick_best_interpretation(random_interpretation, unsatisfied_clause, formula): # treure formula, es pot fer sense !!! (global)
+    best_interpretation = None
+    least_unsatisfied_clauses = sys.maxint
+    for var in unsatisfied_clause:
+        current_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation, var)
+        current_unsatisfied_clauses = count_unsatisfiable_clauses(current_interpretation, formula)
+        if (current_unsatisfied_clauses < least_unsatisfied_clauses):
+            least_unsatisfied_clauses = current_unsatisfied_clauses
+            best_interpretation = current_interpretation
+
+    return best_interpretation, least_unsatisfied_clauses
+
 
 def solve(formula, num_vars, max_flips = 400, rnd_walk = 0.55, max_restarts = sys.maxint):
+#def solve(formula, num_vars, max_flips = 0, rnd_walk = 0.55, max_restarts = 2):
 
     for _ in xrange(max_restarts):
         random_interpretation = get_random_interpretation(num_vars)
+        falsified_lit_counters = get_counters_of_falsified_literals(random_interpretation, formula) # Added. Update the counters every restart.
+
         for _ in xrange(max_flips):
-            is_satifiable, unsatisfied_clause = satisfies(random_interpretation, formula)
+            is_satifiable, unsatisfied_clause = satisfies(random_interpretation, formula) # Deixar-ho =
             if is_satifiable:
                 return random_interpretation
 
-            best_interpretation = None
-            least_unsatisfied_clauses = sys.maxint
-            for var in unsatisfied_clause:
-                current_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation, var)
-                current_unsatisfied_clauses = count_unsatisfiable_clauses(current_interpretation, formula)
-                if (current_unsatisfied_clauses < least_unsatisfied_clauses):
-                    least_unsatisfied_clauses = current_unsatisfied_clauses
-                    best_interpretation = current_interpretation
-
-            #print best_interpretation
-            #print least_unsatisfied_clauses
+            best_interpretation, least_unsatisfied_clauses = pick_best_interpretation(random_interpretation, unsatisfied_clause, formula)
 
             if least_unsatisfied_clauses > 0 and flip_a_coin(rnd_walk):
                 random_variable = random.randint(0, len(unsatisfied_clause) - 1)
@@ -143,9 +161,6 @@ if __name__ == '__main__' :
     cnf_file_name = sys.argv[1]
     formula, num_vars = get_cnf_formula(cnf_file_name)
     positive_locs, negative_locs = get_literal_locations_structure(formula, int(num_vars))
-    print positive_locs
-    print ""
-    print negative_locs
 
     #print "Num_vars: " + num_vars
     #print formula
