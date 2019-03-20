@@ -66,7 +66,7 @@ def flip_a_coin(probability):
 
 
 
-def solve(formula, num_vars, max_flips = 1000, rnd_walk = 0.1, max_restarts = 100):
+def solve(formula, num_vars, max_flips = 400, rnd_walk = 0.55, max_restarts = sys.maxint):
 
     for _ in xrange(max_restarts):
         random_interpretation = get_random_interpretation(num_vars)
