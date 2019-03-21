@@ -91,7 +91,7 @@ def pick_best_interpretation(random_interpretation, unsatisfied_clause, formula)
     return best_interpretation, least_unsatisfied_clauses
 
 
-def solve(formula, num_vars, max_flips = 400, rnd_walk = 0.55, max_restarts = sys.maxint):
+def solve(formula, len_clauses, num_vars, max_flips = 400, rnd_walk = 0.55, max_restarts = sys.maxint):
 #def solve(formula, num_vars, max_flips = 0, rnd_walk = 0.55, max_restarts = 2):
 
     for _ in xrange(max_restarts):
@@ -119,6 +119,7 @@ def solve(formula, num_vars, max_flips = 400, rnd_walk = 0.55, max_restarts = sy
 
 def get_cnf_formula(file_name):
     formula = []
+    len_clauses = []
 
     instance = open(file_name, "r")
     for l in instance:
@@ -130,9 +131,9 @@ def get_cnf_formula(file_name):
 		clause = map(int, l.split())
 		clause.pop() # Remove last 0
 		formula.append(clause)
+		len_clauses.append(len(clause))
 
-
-    return formula, num_vars
+    return formula, len_clauses, num_vars
 
 def print_solution(interpretation):
     print 's SATISFIABLE'
@@ -159,13 +160,13 @@ if __name__ == '__main__' :
         sys.exit()
 
     cnf_file_name = sys.argv[1]
-    formula, num_vars = get_cnf_formula(cnf_file_name)
+    formula, len_clauses, num_vars = get_cnf_formula(cnf_file_name)
     positive_locs, negative_locs = get_literal_locations_structure(formula, int(num_vars))
 
     #print "Num_vars: " + num_vars
     #print formula
 
 	# Solve the problem and get the best solution found
-    best_sol = solve(formula, int(num_vars))
+    best_sol = solve(formula, len_clauses, int(num_vars))
     if best_sol:
         print_solution(best_sol)
