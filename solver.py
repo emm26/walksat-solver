@@ -25,22 +25,6 @@ def satisfies(falsified_lit_counters, len_clauses, formula):
 
     return True, []
 
-# Returns the number of unsatisfied clauses of a formula given an interpretation.
-def count_unsatisfiable_clauses(interpretation, formula):
-    unsatisfied_clauses = 0
-
-    for clause in formula:
-        clause_length = len(clause)
-        for lit in clause:
-            if lit == interpretation[abs(lit)-1]: # satisfies clause
-                break
-            else:
-                clause_length -= 1
-        if clause_length == 0: # falsified clause
-            unsatisfied_clauses+=1
-
-    return unsatisfied_clauses
-
 # Given an interpretation an a variable of the interpretation, returns a copy of
 # the interpretation with the value of the variable changed.
 def get_interpretation_with_changed_variable_sense(interpretation, variable_to_change):
@@ -68,8 +52,6 @@ def get_counters_of_falsified_literals(interpretation, formula):
 def update_falsified_lit_counters_changing_variable_sense(falsified_lit_counters, flipped_var):
     global positive_locs, negative_locs
 
-    #print "Locations pos: ", positive_locs
-    #print "Locations neg: ", negative_locs
     variable_position = abs(flipped_var) -1
 
     if flipped_var > 0:
@@ -83,6 +65,33 @@ def update_falsified_lit_counters_changing_variable_sense(falsified_lit_counters
         for idx in negative_locs[variable_position]: # variable becomes negative, -1 falsified literals
             falsified_lit_counters[idx] -= 1
 
+def count_unsatisfiable_clauses_after_flipping_var(falsified_lit_counters, var):
+
+    new_counters = falsified_lit_counters[:] # The original counters must not be modified
+    # ----- ----- ----- ----- ----- ----- -----
+    variable_position = abs(var) -1
+
+    if var > 0:
+        for idx in positive_locs[variable_position]: # variable becomes positive, -1 falsified literals
+            new_counters[idx] -= 1
+        for idx in negative_locs[variable_position]: # variable becomes positive, +1 falsified literals
+            new_counters[idx] += 1
+    else:
+        for idx in positive_locs[variable_position]: # variable becomes negative, +1 falsified literals
+            new_counters[idx] += 1
+        for idx in negative_locs[variable_position]: # variable becomes negative, -1 falsified literals
+            new_counters[idx] -= 1
+    # ----- ----- ----- ----- ----- ----- -----
+
+    unsatisfied_clauses = 0
+
+    for index, counter in enumerate(new_counters):
+        if counter == len(formula[index]):
+            unsatisfied_clauses+=1
+
+    return unsatisfied_clauses
+
+
 def multiplicator():
     if random.random() < 0.5:
         return 1
@@ -95,47 +104,39 @@ def flip_a_coin(probability):
 
 
 
-def pick_best_interpretation(random_interpretation, unsatisfied_clause, formula): # treure formula, es pot fer sense !!! (global)
-    best_interpretation = None
+def pick_best_interpretation(falsified_lit_counters, unsatisfied_clause):
     least_unsatisfied_clauses = sys.maxint
     for var in unsatisfied_clause:
-        current_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation, var)
-        current_unsatisfied_clauses = count_unsatisfiable_clauses(current_interpretation, formula)
+        current_unsatisfied_clauses = count_unsatisfiable_clauses_after_flipping_var(falsified_lit_counters, var)
         if (current_unsatisfied_clauses < least_unsatisfied_clauses):
             least_unsatisfied_clauses = current_unsatisfied_clauses
-            best_interpretation = current_interpretation
             best_interp_var = var
 
-    return best_interpretation, best_interp_var, least_unsatisfied_clauses
+    return best_interp_var, least_unsatisfied_clauses
 
 
-def solve(formula, len_clauses, num_vars, max_flips = 400, rnd_walk = 0.55, max_restarts = sys.maxint):
-#def solve(formula, len_clauses, num_vars, max_flips = 15, rnd_walk = 0.95, max_restarts = 1):
+def solve(formula, len_clauses, num_vars, max_flips = 4000, rnd_walk = 0.55, max_restarts = sys.maxint):
+#def solve(formula, len_clauses, num_vars, max_flips = 7, rnd_walk = 0.55, max_restarts = 2):
 
     for _ in xrange(max_restarts):
         random_interpretation = get_random_interpretation(num_vars)
-        #print random_interpretation
-        falsified_lit_counters = get_counters_of_falsified_literals(random_interpretation, formula) # Added. Update the counters every restart.
+        falsified_lit_counters = get_counters_of_falsified_literals(random_interpretation, formula) #  Update the counters every restart.
 
         for _ in xrange(max_flips):
-            #is_satifiable, unsatisfied_clause = satisfies(random_interpretation, formula)
             is_satifiable, unsatisfied_clause = satisfies(falsified_lit_counters, len_clauses, formula)
             if is_satifiable:
                 return random_interpretation
 
-            best_interpretation, best_interp_var, least_unsatisfied_clauses = pick_best_interpretation(random_interpretation, unsatisfied_clause, formula)
+            best_interp_var, least_unsatisfied_clauses = pick_best_interpretation(falsified_lit_counters, unsatisfied_clause)
+            best_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation, best_interp_var)
 
             if least_unsatisfied_clauses > 0 and flip_a_coin(rnd_walk):
                 random_variable = random.randint(0, len(unsatisfied_clause) - 1)
                 flipped_var = unsatisfied_clause[random_variable]
                 random_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation, flipped_var)
-                #print "Variable flipped first: ", flipped_var
-                #print "Before: ", falsified_lit_counters
                 update_falsified_lit_counters_changing_variable_sense(falsified_lit_counters, flipped_var)
-                #print "After: ", falsified_lit_counters
             else:
                 random_interpretation = best_interpretation
-                #print "Variable flipped: ", best_interp_var
                 update_falsified_lit_counters_changing_variable_sense(falsified_lit_counters, best_interp_var)
 
 
