@@ -111,7 +111,7 @@ def rnovelty(variables, break_count, most_recently_flipped_var):
         return least_break_variables[random.randint(0, len(least_break_variables) - 1)], least_break
 
 
-def solve(formula, num_vars, max_flips=400, rnd_walk=0.55, max_restarts=sys.maxint):
+def solve(formula, num_vars, max_flips=4000, rnd_walk=0.55, max_restarts=sys.maxint):
     for _ in xrange(max_restarts):
         random_interpretation = get_random_interpretation(num_vars)
         most_recently_flipped_var = None
@@ -121,35 +121,36 @@ def solve(formula, num_vars, max_flips=400, rnd_walk=0.55, max_restarts=sys.maxi
             if is_satifiable:
                 return random_interpretation
 
-            if x % 100 != 0:
+            if x % 150 != 0: # rnovelty
                 break_count = []
                 for var in unsatisfied_clause:
                     current_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation, var)
                     current_num_of_unsatisfied_clauses = count_unsatisfiable_clauses(current_interpretation, formula)
                     break_count.append(current_num_of_unsatisfied_clauses)
 
-                to_flip_variable, num_unsatisfied_clauses_next_flip = rnovelty(unsatisfied_clause, break_count,
+                to_flip_var, num_unsatisfied_clauses_next_flip = rnovelty(unsatisfied_clause, break_count,
                                                                                most_recently_flipped_var)
                 best_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation,
-                                                                                     to_flip_variable)
-                most_recently_flipped_var = to_flip_variable
+                                                                                     to_flip_var)
+                most_recently_flipped_var = to_flip_var
                 num_unsatisfied_clauses_last_flip = num_unsatisfied_clauses_next_flip
-            else:
-                best_interpretation = None
-                num_unsatisfied_clauses_last_flip = sys.maxint
-                for var in unsatisfied_clause:
-                    current_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation, var)
-                    current_unsatisfied_clauses = count_unsatisfiable_clauses(current_interpretation, formula)
-                    if current_unsatisfied_clauses < num_unsatisfied_clauses_last_flip:
-                        num_unsatisfied_clauses_last_flip = current_unsatisfied_clauses
-                        best_interpretation = current_interpretation
+
+            else: # inject a pure random walk
+                to_flip_var_index = random.randint(0, len(unsatisfied_clause) - 1)
+                to_flip_var = unsatisfied_clause[to_flip_var_index]
+                random_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation,
+                                                                                       to_flip_var)
+                current_num_of_unsatisfied_clauses = count_unsatisfiable_clauses(random_interpretation, formula)
+                most_recently_flipped_var = to_flip_var # in fact, already flipped variable
+                num_unsatisfied_clauses_last_flip = current_num_of_unsatisfied_clauses
+                continue
 
 
             if num_unsatisfied_clauses_last_flip > 0 and flip_a_coin(rnd_walk):
-                random_variable = random.randint(0, len(unsatisfied_clause) - 1)
+                random_var_index = random.randint(0, len(unsatisfied_clause) - 1)
                 random_interpretation = get_interpretation_with_changed_variable_sense(random_interpretation,
                                                                                        unsatisfied_clause
-                                                                                       [random_variable])
+                                                                                       [random_var_index])
             else:
                 random_interpretation = best_interpretation
 
@@ -188,6 +189,6 @@ if __name__ == '__main__':
     formula, num_vars = get_cnf_formula(cnf_file_name)
 
     # Solve the problem and get the best solution found
-    best_sol = solve(formula, int(num_vars))
+    best_sol = solve(formula, int(num_vars), int(num_vars) * 35)
     if best_sol:
         print_solution(best_sol)
