@@ -168,9 +168,24 @@ def rnovelty(variables, break_count, most_recently_flipped_var):
         elif break_count[i] == least_break:
             least_break_variables.append(variables[i])
 
-    if is_most_recently_flipped_var_in_clause and least_break - break_count[recently_flipped_pos_in_clause] > 1:
+    # if two or more variables have the best score, pick one that is not the variable 
+    # from the clause that was most recently flipped.
+    if len(least_break_variables) > 1:
+        return least_break_variables[random.randint(0, len(least_break_variables) - 1)], least_break
+    # otherwise, if the best variable is not the most recently flipped variable in the clause
+    # then select it
+    elif not is_most_recently_flipped_var_in_clause and \
+    len(least_break_variables) == 1 or \
+    is_most_recently_flipped_var_in_clause and \
+    least_break - break_count[recently_flipped_pos_in_clause] >= 1 and \
+    len(least_break_variables) == 1:
+        return least_break_variables[0], least_break
+    # otherwise, when the difference in the score between the best
+    # and second best is greater than 1, pick the best.
+    elif is_most_recently_flipped_var_in_clause and least_break - break_count[recently_flipped_pos_in_clause] > 1:
         return variables[recently_flipped_pos_in_clause], break_count[recently_flipped_pos_in_clause]
-    else:  # otherwise, pick at random one of the least_break_variables
+    # otherwise, pick the second best
+    else:
         return least_break_variables[random.randint(0, len(least_break_variables) - 1)], least_break
 
 
@@ -186,7 +201,7 @@ def solve(formula, len_clauses, num_vars, max_flips=4000, rnd_walk=0.55, max_res
             if is_satisfiable:
                 return random_interpretation
 
-            if x % 120 != 0:  # r-novelty
+            if x % 100 != 0:  # r-novelty
                 break_count = []
                 for var in unsatisfied_clause:
                     current_num_of_unsatisfied_clauses = count_unsatisfiable_clauses_after_flipping_var(
