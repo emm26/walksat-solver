@@ -6,7 +6,6 @@ but to be fast. Quickness has been picked over good programming practices.
 Many decisions have been taken avoiding good programming practices in order to achieve
 a quick solver (such as deleting classes). Again, do not take the following approach as an
 example of good coding standards and practices.
-Fasten your seat belts
 """
 
 import sys
@@ -141,7 +140,9 @@ def pick_best_interpretation(falsified_lit_counters, unsatisfied_clause):
 
 def rnovelty(variables, break_count, most_recently_flipped_var):
     """
-    Applies Rnovelty heuristic
+    Applies Rnovelty heuristic with the slightly difference variables
+    are not sorted by breakcount - makecount, instead they're sorted by 
+    breakcount.
     :param variables: list of variables in an unsatisfied clause
     :param break_count: list of the number of broken clauses if changing
     the sense of the each variable in variables list.
@@ -151,42 +152,58 @@ def rnovelty(variables, break_count, most_recently_flipped_var):
     :return: the new variable to flip computed by the Rnovelty heuristic
     """
 
-    # compute the variables that have the least break count
-    # without considering the most recently flipped variable
+    # compute the first and second best variable/s under the sort
     least_break = sys.maxint
     least_break_variables = []
-    is_most_recently_flipped_var_in_clause = False
+    second_least_break = sys.maxint
+    second_least_break_variables = []
+    is_recently_picked_var_in_least_break_vars = False
 
     for i in range(0, len(break_count)):
-        if variables[i] == most_recently_flipped_var:  # ignore it
-            is_most_recently_flipped_var_in_clause = True
-            recently_flipped_pos_in_clause = i
-            continue
-        elif break_count[i] < least_break:
+        if break_count[i] < least_break:
+            if variables[i] == most_recently_flipped_var:
+                is_recently_picked_var_in_least_break_vars = True
+                recently_picked_var_pos = i
+            else:
+                is_recently_picked_var_in_least_break_vars = False
+
             least_break = break_count[i]
             least_break_variables = [variables[i]]
+
         elif break_count[i] == least_break:
+            if variables[i] == most_recently_flipped_var:
+                is_recently_picked_var_in_least_break_vars = True
+                recently_picked_var_pos = i
+
             least_break_variables.append(variables[i])
 
+        elif break_count[i] < second_least_break:
+            second_least_break = break_count[i]
+            second_least_break_variables = [variables[i]]
+
+        elif break_count[i] == second_least_break:
+            second_least_break_variables.append(variables[i])
+
     # if two or more variables have the best score, pick one that is not the variable 
-    # from the clause that was most recently flipped.
+    # from the clause that was most recently flipped
     if len(least_break_variables) > 1:
+        if is_recently_picked_var_in_least_break_vars:
+            if flip_a_coin(0.5):
+                return least_break_variables[random.randint(0, recently_picked_var_pos - 1)], least_break
+            return least_break_variables[random.randint(recently_picked_var_pos + 1, len(least_break_variables) - 1)], least_break
+
         return least_break_variables[random.randint(0, len(least_break_variables) - 1)], least_break
     # otherwise, if the best variable is not the most recently flipped variable in the clause
     # then select it
-    elif not is_most_recently_flipped_var_in_clause and \
-    len(least_break_variables) == 1 or \
-    is_most_recently_flipped_var_in_clause and \
-    least_break - break_count[recently_flipped_pos_in_clause] >= 1 and \
-    len(least_break_variables) == 1:
+    elif not is_recently_picked_var_in_least_break_vars:
         return least_break_variables[0], least_break
     # otherwise, when the difference in the score between the best
-    # and second best is greater than 1, pick the best.
-    elif is_most_recently_flipped_var_in_clause and least_break - break_count[recently_flipped_pos_in_clause] > 1:
-        return variables[recently_flipped_pos_in_clause], break_count[recently_flipped_pos_in_clause]
+    # and second best is greater than 1, pick the best
+    elif second_least_break - least_break > 1:
+        return least_break_variables[0], least_break
     # otherwise, pick the second best
     else:
-        return least_break_variables[random.randint(0, len(least_break_variables) - 1)], least_break
+        return second_least_break_variables[0], second_least_break
 
 
 def solve(formula, len_clauses, num_vars, max_flips=4000, rnd_walk=0.55, max_restarts=sys.maxint):
@@ -201,7 +218,7 @@ def solve(formula, len_clauses, num_vars, max_flips=4000, rnd_walk=0.55, max_res
             if is_satisfiable:
                 return random_interpretation
 
-            if x % 100 != 0:  # r-novelty
+            if x % 110 != 0:  # r-novelty
                 break_count = []
                 for var in unsatisfied_clause:
                     current_num_of_unsatisfied_clauses = count_unsatisfiable_clauses_after_flipping_var(
